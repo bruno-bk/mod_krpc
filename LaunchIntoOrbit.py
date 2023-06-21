@@ -7,7 +7,14 @@ turn_end_altitude = 45000
 target_altitude = 100000
 
 conn = krpc.connect(name='Launch into orbit')
-vessel = conn.space_center.active_vessel
+
+while 1:
+    try:
+        vessel = conn.space_center.active_vessel
+        break
+    except:
+        print("aguardando lançamento...")
+        time.sleep(1)
 
 # Set up streams for telemetry
 ut = conn.add_stream(getattr, conn.space_center, 'ut')
@@ -17,17 +24,36 @@ stage_1_resources = vessel.resources_in_decouple_stage(stage=1, cumulative=False
 srb_fuel = conn.add_stream(stage_1_resources.amount, 'SolidFuel')
 
 # Pre-launch setup
-vessel.control.sas = True
+vessel.control.sas = False
 vessel.control.rcs = False
 vessel.control.throttle = 1.0
 
-# Countdown...
-print('3...')
-time.sleep(1)
-print('2...')
-time.sleep(1)
-print('1...')
-time.sleep(1)
+canvas = conn.ui.stock_canvas
+screen_size = canvas.rect_transform.size
+panel = canvas.add_panel()
+rect = panel.rect_transform
+rect.size = (200, 100)
+rect.position = (110-(screen_size[0]/2), 0)
+
+button = panel.add_button("Launch")
+button.rect_transform.position = (0, -20)
+
+text = panel.add_text("Done")
+text.rect_transform.position = (0, 20)
+text.color = (1, 1, 1)
+text.size = 18
+
+button_clicked = conn.add_stream(getattr, button, 'clicked')
+
+while not button_clicked():
+    pass
+
+button.clicked = False
+
+for i in range(3, 0, -1):
+    text.content = "counter %d" % i
+    time.sleep(1)
+text.content = "Launch!"
 print('Launch!')
 
 # Activate the first stage
@@ -55,27 +81,27 @@ while True:
         if srb_fuel() < 0.1:
             vessel.control.activate_next_stage()
             srbs_separated = True
-            print('SRBs separated')
+            text.content = 'SRBs separated'
 
     # Decrease throttle when approaching target apoapsis
     if apoapsis() > target_altitude*0.9:
-        print('Approaching target apoapsis')
+        text.content = 'Approaching target apoapsis'
         break
 
 # Disable engines when target apoapsis is reached
 vessel.control.throttle = 0.25
 while apoapsis() < target_altitude:
     pass
-print('Target apoapsis reached')
+text.content = 'Target apoapsis reached'
 vessel.control.throttle = 0.0
 
 # Wait until out of atmosphere
-print('Coasting out of atmosphere')
+text.content = 'Coasting out of atmosphere'
 while altitude() < 70500:
     pass
 
 # Plan circularization burn (using vis-viva equation)
-print('Planning circularization burn')
+text.content = 'Planning circularization burn'
 mu = vessel.orbit.body.gravitational_parameter
 r = vessel.orbit.apoapsis
 a1 = vessel.orbit.semi_major_axis
@@ -95,26 +121,26 @@ flow_rate = F / Isp
 burn_time = (m0 - m1) / flow_rate
 
 # Orientate ship
-print('Orientating ship for circularization burn')
+text.content = 'Orientating ship for circularization burn'
 vessel.auto_pilot.reference_frame = node.reference_frame
 vessel.auto_pilot.target_direction = (0, 1, 0)
 vessel.auto_pilot.wait()
 
 # Wait until burn
-print('Waiting until circularization burn')
+text.content = 'Waiting until circularization burn'
 burn_ut = ut() + vessel.orbit.time_to_apoapsis - (burn_time/2.)
 lead_time = 5
 conn.space_center.warp_to(burn_ut - lead_time)
 
 # Execute burn
-print('Ready to execute burn')
+text.content = 'Ready to execute burn'
 time_to_apoapsis = conn.add_stream(getattr, vessel.orbit, 'time_to_apoapsis')
 while time_to_apoapsis() - (burn_time/2.) > 0:
     pass
-print('Executing burn')
+text.content = 'Executing burn'
 vessel.control.throttle = 1.0
 time.sleep(burn_time - 0.1)
-print('Fine tuning')
+text.content = 'Fine tuning'
 vessel.control.throttle = 0.05
 remaining_burn = conn.add_stream(node.remaining_burn_vector, node.reference_frame)
 while remaining_burn()[1] > 0:
@@ -122,4 +148,4 @@ while remaining_burn()[1] > 0:
 vessel.control.throttle = 0.0
 node.remove()
 
-print('Launch complete')
+text.content = 'Launch complete'
