@@ -2,12 +2,13 @@ import math
 import time
 import krpc
 
+from screen import Screen
+
 turn_start_altitude = 250
-turn_end_altitude = 45000
+turn_end_altitude = 70000
 target_altitude = 100000
 
 conn = krpc.connect(name='Launch into orbit')
-canvas = conn.ui.stock_canvas
 
 while 1:
     try:
@@ -19,32 +20,10 @@ while 1:
 
 srf_frame = vessel.orbit.body.reference_frame
 
-screen_size = canvas.rect_transform.size
-panel = canvas.add_panel()
-rect = panel.rect_transform
-rect.size = (300, 100)
-rect.position = (110-(screen_size[0]/2), (screen_size[1]/2)-100)
-
-button_launch = panel.add_button("Launch!")
-button_launch.rect_transform.position = (0, 30)
-text_status = panel.add_text("")
-text_status.rect_transform.position = (0, 25)
-text_status.color = (1, 1, 1)
-text_status.size = 18
-text_status.visible = False
-
-text_dynamic_pr = panel.add_text("Dynamic Pr.: 0 psi")
-text_dynamic_pr.rect_transform.position = (0, 0)
-text_dynamic_pr.color = (1, 1, 1)
-text_dynamic_pr.size = 18
-text_speed = panel.add_text("Speed: 0 m/s")
-text_speed.rect_transform.position = (0, -20)
-text_speed.color = (1, 1, 1)
-text_speed.size = 18
-text_altitude = panel.add_text("Altitude:")
-text_altitude.rect_transform.position = (0, -40)
-text_altitude.color = (1, 1, 1)
-text_altitude.size = 18
+# Pre-launch setup
+vessel.control.sas = False
+vessel.control.rcs = False
+vessel.control.throttle = 1.0
 
 # Set up streams for telemetry
 ut = conn.add_stream(getattr, conn.space_center, 'ut')
@@ -55,22 +34,24 @@ dynamic_pressure = conn.add_stream(getattr, vessel.flight(srf_frame), 'dynamic_p
 stage_1_resources = vessel.resources_in_decouple_stage(stage=1, cumulative=False)
 srb_fuel = conn.add_stream(stage_1_resources.amount, 'SolidFuel')
 
-# Pre-launch setup
-vessel.control.sas = False
-vessel.control.rcs = False
-vessel.control.throttle = 1.0
+screen = Screen(conn)
+screen.add_button_of_launch("Launch")
+screen.add_status_of_launch("status")
 
-button_launch_clicked = conn.add_stream(getattr, button_launch, 'clicked')
-while not button_launch_clicked():
-    pass
-button_launch.visible = False
-text_status.visible = True
-button_launch_clicked.clicked = False
+screen.add_telemetry("speed", "m/s", srf_speed)
+screen.add_telemetry("altitude", "m", altitude)
+screen.add_telemetry("apoapsis", "m", apoapsis)
+screen.add_telemetry("dy pressure", "psi", dynamic_pressure)
+
+screen.update_value_of_element("status", "Ready to launch")
+
+#TODO - wait press button of launch
 
 for i in range(3, 0, -1):
-    text_status.content = "counter %d" % i
+    screen.update_value_of_element("status", "counter %d" % i)
     time.sleep(1)
-text_status.content = "Launch!"
+
+screen.update_value_of_element("status", "Launch!")
 
 # Activate the first stage
 vessel.control.activate_next_stage()
@@ -80,11 +61,6 @@ vessel.auto_pilot.target_pitch_and_heading(90, 90)
 # Main ascent loop
 srbs_separated = False
 turn_angle = 0
-
-def update_telemetry_screen():
-    text_dynamic_pr.content = 'Dynamic Pr: %d psi' % (dynamic_pressure())
-    text_speed.content = 'Speed: %d m/s' % (srf_speed())
-    text_altitude.content = 'Altitude: %d m' % (vessel.flight(srf_frame).surface_altitude)
 
 while True:
 
@@ -111,31 +87,31 @@ while True:
         if srb_fuel() < 0.1:
             vessel.control.activate_next_stage()
             srbs_separated = True
-            text_status.content = 'SRBs separated'
+            screen.update_value_of_element("status", 'SRBs separated')
 
     # Decrease throttle when approaching target apoapsis
     if apoapsis() > target_altitude*0.9:
-        text_status.content = 'Approaching target apoapsis'
+        screen.update_value_of_element("status", 'Approaching target apoapsis')
         break
 
-    update_telemetry_screen()
+    screen.update_telemetry()
     time.sleep(0.1)
 
 # Disable engines when target apoapsis is reached
 vessel.control.throttle = 0.25
 while apoapsis() < target_altitude:
-    update_telemetry_screen()
-text_status.content = 'Target apoapsis reached'
+    screen.update_telemetry()
+screen.update_value_of_element("status", 'Target apoapsis reached')
 vessel.control.throttle = 0.0
 
 # Wait until out of atmosphere
-text_status.content = 'Coasting out of atmosphere'
+screen.update_value_of_element("status", 'Coasting out of atmosphere')
 while altitude() < 70500:
-    update_telemetry_screen()
+    screen.update_telemetry()
     time.sleep(0.1)
 
 # Plan circularization burn (using vis-viva equation)
-text_status.content = 'Planning circularization burn'
+screen.update_value_of_element("status", 'Planning circularization burn')
 mu = vessel.orbit.body.gravitational_parameter
 r = vessel.orbit.apoapsis
 a1 = vessel.orbit.semi_major_axis
@@ -155,36 +131,36 @@ flow_rate = F / Isp
 burn_time = (m0 - m1) / flow_rate
 
 # Orientate ship
-text_status.content = 'Orientating ship'
+screen.update_value_of_element("status", 'Orientating ship')
 vessel.auto_pilot.reference_frame = node.reference_frame
 vessel.auto_pilot.target_direction = (0, 1, 0)
 vessel.auto_pilot.wait()
 
 # Wait until burn
-text_status.content = 'Waiting until burn'
+screen.update_value_of_element("status", 'Waiting until burn')
 burn_ut = ut() + vessel.orbit.time_to_apoapsis - (burn_time/2.)
 lead_time = 5
 conn.space_center.warp_to(burn_ut - lead_time)
 
 # Execute burn
-text_status.content = 'Ready to execute burn'
+screen.update_value_of_element("status", 'Ready to execute burn')
 time_to_apoapsis = conn.add_stream(getattr, vessel.orbit, 'time_to_apoapsis')
 while time_to_apoapsis() - (burn_time/2.) > 0:
-    update_telemetry_screen()
+    screen.update_telemetry()
     time.sleep(0.1)
-text_status.content = 'Executing burn'
+screen.update_value_of_element("status", 'Executing burn')
 vessel.control.throttle = 1.0
 time.sleep(burn_time - 0.1)
-text_status.content = 'Fine tuning'
+screen.update_value_of_element("status", 'Fine tuning')
 vessel.control.throttle = 0.05
 remaining_burn = conn.add_stream(node.remaining_burn_vector, node.reference_frame)
 while remaining_burn()[1] > 1:
-    update_telemetry_screen()
+    screen.update_telemetry()
     time.sleep(0.1)
 vessel.control.throttle = 0.0
 node.remove()
 
-text_status.content = 'Launch complete'
+screen.update_value_of_element("status", 'Launch complete')
 vessel.auto_pilot.target_direction = (0, 1, 0)
 vessel.control.sas = True
 time.sleep(1)
