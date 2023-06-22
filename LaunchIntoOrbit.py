@@ -43,16 +43,16 @@ screen.add_telemetry("altitude", "m", altitude)
 screen.add_telemetry("apoapsis", "m", apoapsis)
 screen.add_telemetry("dy pressure", "psi", dynamic_pressure)
 
-screen.update_value_of_element("status", "Ready to launch")
+screen.update_text_value("status", "Ready to launch")
 
 while not screen.get_state_of_button("Launch"):
     time.sleep(.1)
 
 for i in range(3, 0, -1):
-    screen.update_value_of_element("status", "counter %d" % i)
+    screen.update_text_value("status", "counter %d" % i)
     time.sleep(1)
 
-screen.update_value_of_element("status", "Launch!")
+screen.update_text_value("status", "Launch!")
 
 # Activate the first stage
 vessel.control.activate_next_stage()
@@ -88,11 +88,11 @@ while True:
         if srb_fuel() < 0.1:
             vessel.control.activate_next_stage()
             srbs_separated = True
-            screen.update_value_of_element("status", 'SRBs separated')
+            screen.update_text_value("status", 'SRBs separated')
 
     # Decrease throttle when approaching target apoapsis
     if apoapsis() > target_altitude*0.9:
-        screen.update_value_of_element("status", 'Approaching target apoapsis')
+        screen.update_text_value("status", 'Approaching target apoapsis')
         break
 
     screen.update_telemetry()
@@ -102,17 +102,17 @@ while True:
 vessel.control.throttle = 0.25
 while apoapsis() < target_altitude:
     screen.update_telemetry()
-screen.update_value_of_element("status", 'Target apoapsis reached')
+screen.update_text_value("status", 'Target apoapsis reached')
 vessel.control.throttle = 0.0
 
 # Wait until out of atmosphere
-screen.update_value_of_element("status", 'Coasting out of atmosphere')
+screen.update_text_value("status", 'Coasting out of atmosphere')
 while altitude() < 70500:
     screen.update_telemetry()
     time.sleep(0.1)
 
 # Plan circularization burn (using vis-viva equation)
-screen.update_value_of_element("status", 'Planning circularization burn')
+screen.update_text_value("status", 'Planning circularization burn')
 mu = vessel.orbit.body.gravitational_parameter
 r = vessel.orbit.apoapsis
 a1 = vessel.orbit.semi_major_axis
@@ -132,27 +132,27 @@ flow_rate = F / Isp
 burn_time = (m0 - m1) / flow_rate
 
 # Orientate ship
-screen.update_value_of_element("status", 'Orientating ship')
+screen.update_text_value("status", 'Orientating ship')
 vessel.auto_pilot.reference_frame = node.reference_frame
 vessel.auto_pilot.target_direction = (0, 1, 0)
 vessel.auto_pilot.wait()
 
 # Wait until burn
-screen.update_value_of_element("status", 'Waiting until burn')
+screen.update_text_value("status", 'Waiting until burn')
 burn_ut = ut() + vessel.orbit.time_to_apoapsis - (burn_time/2.)
 lead_time = 5
 conn.space_center.warp_to(burn_ut - lead_time)
 
 # Execute burn
-screen.update_value_of_element("status", 'Ready to execute burn')
+screen.update_text_value("status", 'Ready to execute burn')
 time_to_apoapsis = conn.add_stream(getattr, vessel.orbit, 'time_to_apoapsis')
 while time_to_apoapsis() - (burn_time/2.) > 0:
     screen.update_telemetry()
     time.sleep(0.1)
-screen.update_value_of_element("status", 'Executing burn')
+screen.update_text_value("status", 'Executing burn')
 vessel.control.throttle = 1.0
 time.sleep(burn_time - 0.1)
-screen.update_value_of_element("status", 'Fine tuning')
+screen.update_text_value("status", 'Fine tuning')
 vessel.control.throttle = 0.05
 remaining_burn = conn.add_stream(node.remaining_burn_vector, node.reference_frame)
 while remaining_burn()[1] > 1:
@@ -161,7 +161,7 @@ while remaining_burn()[1] > 1:
 vessel.control.throttle = 0.0
 node.remove()
 
-screen.update_value_of_element("status", 'Launch complete')
+screen.update_text_value("status", 'Launch complete')
 vessel.auto_pilot.target_direction = (0, 1, 0)
 vessel.control.sas = True
 time.sleep(1)

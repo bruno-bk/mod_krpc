@@ -5,8 +5,7 @@ class Screen:
         self.size_of_screen = [500, 300]
         self.font_size = 18
         self.line_size = [self.size_of_screen[0], self.font_size + 4]
-        self.elements = {}
-        self.telemetry = {}
+        self.texts = {}
         self.buttons = {}
         self.creat_screen()
         self.lines_of_telemetry = 0
@@ -42,25 +41,26 @@ class Screen:
         return result
 
     def add_status_of_launch(self, name):
-        text_status = self.panel.add_text("")
-        text_status.rect_transform.position = (-80, -125)
-        text_status.rect_transform.size = (320, 50)
-        text_status.color = (1, 1, 1)
-        text_status.size = self.font_size
-        self.elements[name] = text_status
+        self.texts[name] = [self.create_text_element([320, 50], [-80, -125])]
 
-    def update_value_of_element(self, element, value):
-        self.elements[element].content = value
+    def update_text_value(self, element, value):
+        self.texts[element][0].content = value
 
     def add_telemetry(self, name, unit, stream):
         self.lines_of_telemetry += 1
-        element = self.panel.add_text(name + ": 0 " + unit)
-        element.rect_transform.position = (-120, 150-(self.lines_of_telemetry*self.line_size[1]))
-        element.rect_transform.size = (240, self.line_size[1])
+        element = self.create_text_element([240, self.line_size[1]], [-120, 150-(self.lines_of_telemetry*self.line_size[1])])
+        self.texts[name] = [element, stream, unit]
+        self.update_telemetry()
+
+    def create_text_element(self, size, position):
+        element = self.panel.add_text("")
+        element.rect_transform.position = position
+        element.rect_transform.size = size
         element.color = (1, 1, 1)
         element.size = self.font_size
-        self.telemetry[name] = [element, stream, unit]
+        return element
 
     def update_telemetry(self):
-        for i in self.telemetry:
-            self.telemetry[i][0].content = "{}: {:.2f} {}".format(i, self.telemetry[i][1](), self.telemetry[i][2])
+        for i in self.texts:
+            if(len(self.texts[i]) == 3):
+                self.update_text_value(i, "{}: {:.2f} {}".format(i, self.texts[i][1](), self.texts[i][2]))
