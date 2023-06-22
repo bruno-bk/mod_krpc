@@ -7,6 +7,7 @@ class Screen:
         self.line_size = [self.size_of_screen[0], self.font_size + 4]
         self.elements = {}
         self.telemetry = {}
+        self.buttons = {}
         self.creat_screen()
         self.lines_of_telemetry = 0
         self.lines_of_input = 0
@@ -19,11 +20,26 @@ class Screen:
         self.panel.rect_transform.size = self.size_of_screen
         self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
 
-    def add_button_of_launch(self, name):
-        button_launch = self.panel.add_button("Launch!")
-        button_launch.rect_transform.position = (165, -120)
-        button_launch.rect_transform.size = (150, 40)
-        self.elements[name] = button_launch
+    def add_button(self, name, creat_stream, size, position):
+        button_launch = self.panel.add_button(name)
+        button_launch.rect_transform.position = position
+        button_launch.rect_transform.size = size
+        if creat_stream == True:
+            self.buttons[name] = [button_launch, self.connection.add_stream(getattr, button_launch, 'clicked')]
+        else:
+            self.buttons[name] = [button_launch]
+
+    def get_state_of_button(self, name):
+        result = False
+        if(len(self.buttons[name]) == 2):
+            result = self.buttons[name][1]()
+            if result == True:
+                self.buttons[name][1] = False
+        else:
+            # TODO - log warn
+            print("stream não criada")
+
+        return result
 
     def add_status_of_launch(self, name):
         text_status = self.panel.add_text("")
@@ -35,7 +51,6 @@ class Screen:
 
     def update_value_of_element(self, element, value):
         self.elements[element].content = value
-
 
     def add_telemetry(self, name, unit, stream):
         self.lines_of_telemetry += 1

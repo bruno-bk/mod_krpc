@@ -35,7 +35,7 @@ stage_1_resources = vessel.resources_in_decouple_stage(stage=1, cumulative=False
 srb_fuel = conn.add_stream(stage_1_resources.amount, 'SolidFuel')
 
 screen = Screen(conn)
-screen.add_button_of_launch("Launch")
+screen.add_button("Launch", True, [150, 40], [165, -120])
 screen.add_status_of_launch("status")
 
 screen.add_telemetry("speed", "m/s", srf_speed)
@@ -45,7 +45,8 @@ screen.add_telemetry("dy pressure", "psi", dynamic_pressure)
 
 screen.update_value_of_element("status", "Ready to launch")
 
-#TODO - wait press button of launch
+while not screen.get_state_of_button("Launch"):
+    time.sleep(.1)
 
 for i in range(3, 0, -1):
     screen.update_value_of_element("status", "counter %d" % i)
