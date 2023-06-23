@@ -67,7 +67,7 @@ class Screen:
             if(len(self.texts[i]) == 3):
                 self.update_text_value(i, "{}: {:.2f} {}".format(i, self.texts[i][1](), self.texts[i][2]))
 
-    def add_input(self, name, value):
+    def add_input(self, name, value, min, max):
         self.lines_of_input += 1
         input = self.panel.add_input_field()
         input.value = str(value)
@@ -77,7 +77,14 @@ class Screen:
         label = self.create_text_element([120, self.input_size[1]], [70, 150-(self.lines_of_input*self.input_size[1])])
         label.content = name + ":"
 
-        self.inputs[name] = [label, input]
+        self.inputs[name] = [label, input, min, max]
 
     def get_input_value(self, name):
+        if self.inputs[name][2] != None and self.inputs[name][3] != None:
+            if int(self.inputs[name][1].value) < int(self.inputs[name][2]):
+                self.inputs[name][1].value = str(self.inputs[name][2])
+
+            if int(self.inputs[name][1].value) > int(self.inputs[name][3]):
+                self.inputs[name][1].value = str(self.inputs[name][3])
+
         return self.inputs[name][1].value

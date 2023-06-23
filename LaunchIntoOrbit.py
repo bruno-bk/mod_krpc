@@ -44,8 +44,8 @@ screen.add_telemetry("altitude", "m", altitude)
 screen.add_telemetry("apoapsis", "m", apoapsis)
 screen.add_telemetry("dy pressure", "psi", dynamic_pressure)
 
-screen.add_input("Altitude", target_apoapsis)
-screen.add_input("Direction", target_direction)
+screen.add_input("Altitude", target_apoapsis, 10000, 2000000)
+screen.add_input("Direction", target_direction, 0, 360)
 
 screen.update_text_value("status", "Ready to launch")
 
