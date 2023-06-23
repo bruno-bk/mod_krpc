@@ -4,9 +4,11 @@ class Screen:
         self.panel = None
         self.size_of_screen = [500, 300]
         self.font_size = 18
+        self.input_size = [120, 30]
         self.line_size = [self.size_of_screen[0], self.font_size + 4]
         self.texts = {}
         self.buttons = {}
+        self.inputs = {}
         self.creat_screen()
         self.lines_of_telemetry = 0
         self.lines_of_input = 0
@@ -64,3 +66,18 @@ class Screen:
         for i in self.texts:
             if(len(self.texts[i]) == 3):
                 self.update_text_value(i, "{}: {:.2f} {}".format(i, self.texts[i][1](), self.texts[i][2]))
+
+    def add_input(self, name, value):
+        self.lines_of_input += 1
+        input = self.panel.add_input_field()
+        input.value = str(value)
+        input.rect_transform.position = [180, 150-(self.lines_of_input*self.input_size[1])]
+        input.rect_transform.size = self.input_size
+
+        label = self.create_text_element([120, self.input_size[1]], [70, 150-(self.lines_of_input*self.input_size[1])])
+        label.content = name + ":"
+
+        self.inputs[name] = [label, input]
+
+    def get_input_value(self, name):
+        return self.inputs[name][1].value

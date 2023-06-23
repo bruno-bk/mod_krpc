@@ -6,7 +6,8 @@ from screen import Screen
 
 turn_start_altitude = 250
 turn_end_altitude = 70000
-target_altitude = 100000
+target_apoapsis = 100000
+target_direction = 90
 
 conn = krpc.connect(name='Launch into orbit')
 
@@ -43,10 +44,16 @@ screen.add_telemetry("altitude", "m", altitude)
 screen.add_telemetry("apoapsis", "m", apoapsis)
 screen.add_telemetry("dy pressure", "psi", dynamic_pressure)
 
+screen.add_input("Altitude", target_apoapsis)
+screen.add_input("Direction", target_direction)
+
 screen.update_text_value("status", "Ready to launch")
 
 while not screen.get_state_of_button("Launch"):
     time.sleep(.1)
+
+target_apoapsis = int(screen.get_input_value("Altitude"))
+target_direction = int(screen.get_input_value("Direction"))
 
 for i in range(3, 0, -1):
     screen.update_text_value("status", "counter %d" % i)
@@ -57,7 +64,7 @@ screen.update_text_value("status", "Launch!")
 # Activate the first stage
 vessel.control.activate_next_stage()
 vessel.auto_pilot.engage()
-vessel.auto_pilot.target_pitch_and_heading(90, 90)
+vessel.auto_pilot.target_pitch_and_heading(90, target_direction)
 
 # Main ascent loop
 srbs_separated = False
@@ -81,7 +88,7 @@ while True:
         new_turn_angle = frac * 90
         if abs(new_turn_angle - turn_angle) > 0.5:
             turn_angle = new_turn_angle
-            vessel.auto_pilot.target_pitch_and_heading(90-turn_angle, 90)
+            vessel.auto_pilot.target_pitch_and_heading(90-turn_angle, target_direction)
 
     # Separate SRBs when finished
     if not srbs_separated:
@@ -91,7 +98,7 @@ while True:
             screen.update_text_value("status", 'SRBs separated')
 
     # Decrease throttle when approaching target apoapsis
-    if apoapsis() > target_altitude*0.9:
+    if apoapsis() > target_apoapsis*0.9:
         screen.update_text_value("status", 'Approaching target apoapsis')
         break
 
@@ -100,7 +107,7 @@ while True:
 
 # Disable engines when target apoapsis is reached
 vessel.control.throttle = 0.25
-while apoapsis() < target_altitude:
+while apoapsis() < target_apoapsis:
     screen.update_telemetry()
 screen.update_text_value("status", 'Target apoapsis reached')
 vessel.control.throttle = 0.0
