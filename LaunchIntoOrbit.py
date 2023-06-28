@@ -21,7 +21,7 @@ turn_start_altitude = 250
 turn_end_altitude = 70000
 target_apoapsis = 100000
 target_direction = 90
-stages_amount = 3
+stages_amount = 0
 CONTROL_STAGES = 2
 
 conn = krpc.connect(name='Launch into orbit')
@@ -40,6 +40,7 @@ srf_frame = vessel.orbit.body.reference_frame
 vessel.control.sas = False
 vessel.control.rcs = False
 vessel.control.throttle = 1.0
+stages_amount = vessel.control.current_stage - CONTROL_STAGES
 
 # Set up streams for telemetry
 ut = conn.add_stream(getattr, conn.space_center, 'ut')
@@ -85,7 +86,6 @@ vessel.auto_pilot.engage()
 vessel.auto_pilot.target_pitch_and_heading(90, target_direction)
 
 # Main ascent loop
-srbs_separated = False
 turn_angle = 0
 
 while True:
@@ -108,12 +108,11 @@ while True:
             turn_angle = new_turn_angle
             vessel.auto_pilot.target_pitch_and_heading(90-turn_angle, target_direction)
 
-    # Separate SRBs when finished
-    if not srbs_separated:
-        if stage_fuel_solid[stages_amount-1]() < 0.1:
-            vessel.control.activate_next_stage()
-            srbs_separated = True
-            screen.update_text_value("status", 'stage separated')
+
+    if stage_fuel_solid[stages_amount-1]() < 0.1 and stage_fuel_liquid[stages_amount-1]() < 0.1:
+        vessel.control.activate_next_stage()
+        screen.update_text_value("status", f'stage {stages_amount} separated')
+        stages_amount -= 1
 
     # Decrease throttle when approaching target apoapsis
     if apoapsis() > target_apoapsis*0.9:
