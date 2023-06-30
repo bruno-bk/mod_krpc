@@ -14,12 +14,15 @@ class Screen:
         self.lines_of_input = 0
 
     def creat_screen(self):
-        canvas = self.connection.ui.stock_canvas
-        screen_size = canvas.rect_transform.size
+        if self.panel == None:
+            canvas = self.connection.ui.stock_canvas
+            screen_size = canvas.rect_transform.size
 
-        self.panel = canvas.add_panel()
-        self.panel.rect_transform.size = self.size_of_screen
-        self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
+            self.panel = canvas.add_panel()
+            self.panel.rect_transform.size = self.size_of_screen
+            self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
+        else:
+            self.clear_screen()
     
     def clear_screen(self):
         for i in self.texts:
