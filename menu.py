@@ -3,8 +3,20 @@ import time
 
 from screen import Screen
 
+def connect_to_server():
+    conn = None
+    try:
+        conn = krpc.connect(name='rocket controller')
+    except:
+        print("Falha ao se conectar, verifique se o servidor esta online em 127.0.0.1")
+    return conn
+
 def main():
-    conn = krpc.connect(name='rocket controller')
+    conn = None
+    while conn == None:
+        conn = connect_to_server()
+        time.sleep(1)
+
     screen = Screen(conn)
     screen_size = conn.ui.stock_canvas.rect_transform.size
     screen.creat_screen([150, 190], (260-(screen_size[0]/2), (screen_size[1]/2)-200))
