@@ -52,7 +52,7 @@ class Screen:
         if(len(self.buttons[name]) == 2):
             result = self.buttons[name][1]()
             if result == True:
-                self.buttons[name][1] = False
+                self.buttons[name][0].clicked = False
         else:
             # TODO - log warn
             print("stream não criada")
