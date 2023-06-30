@@ -2,6 +2,7 @@ import krpc
 import time
 
 from screen import Screen
+import orbit_launch
 
 def connect_to_server():
     conn = None
@@ -35,7 +36,7 @@ def main():
 
     while 1:
         if screen.get_state_of_button("Orbit launch"):
-            print("Orbit launch")
+            orbit_launch.launch()
 
         time.sleep(.1)
 
