@@ -20,6 +20,20 @@ class Screen:
         self.panel = canvas.add_panel()
         self.panel.rect_transform.size = self.size_of_screen
         self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
+    
+    def clear_screen(self):
+        for i in self.texts:
+            self.texts[i][0].remove()
+        self.texts.clear()
+        
+        for i in self.buttons:
+            self.buttons[i][0].remove()
+        self.buttons.clear()
+
+        for i in self.inputs:
+            self.inputs[i][0].remove()
+            self.inputs[i][1].remove()
+        self.inputs.clear()
 
     def add_button(self, name, creat_stream, size, position):
         button_launch = self.panel.add_button(name)
