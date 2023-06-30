@@ -36,8 +36,13 @@ def main():
 
     while 1:
         if screen.get_state_of_button("Orbit launch"):
-            orbit_launch.launch()
+            try:
+                orbit_launch.launch(conn, screen)
+            except:
+                pass
+            return
 
         time.sleep(.1)
 
-main()
+while 1:
+    main()
