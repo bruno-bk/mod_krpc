@@ -9,20 +9,23 @@ class Screen:
         self.texts = {}
         self.buttons = {}
         self.inputs = {}
-        self.creat_screen()
         self.lines_of_telemetry = 0
         self.lines_of_input = 0
 
-    def creat_screen(self):
+        screen_size = self.connection.ui.stock_canvas.rect_transform.size
+        self.creat_screen(self.size_of_screen, (260-(screen_size[0]/2), (screen_size[1]/2)-200))
+
+    def creat_screen(self, size, position):
         if self.panel == None:
             canvas = self.connection.ui.stock_canvas
-            screen_size = canvas.rect_transform.size
 
             self.panel = canvas.add_panel()
-            self.panel.rect_transform.size = self.size_of_screen
-            self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
+            self.panel.rect_transform.size = size
+            self.panel.rect_transform.position = position
         else:
             self.clear_screen()
+            self.panel.rect_transform.size = size
+            self.panel.rect_transform.position = position
     
     def clear_screen(self):
         for i in self.texts:
