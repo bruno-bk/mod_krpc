@@ -12,15 +12,26 @@ def connect_to_server():
         print("Falha ao se conectar, verifique se o servidor esta online em 127.0.0.1")
     return conn
 
-def main():
-    conn = None
-    while conn == None:
-        conn = connect_to_server()
-        time.sleep(1)
+def minimized_screen(screen):
+    screen.creat_screen([80, 30], [500, -520])
 
-    screen = Screen(conn)
+    screen.add_button("x", True, [20, 20], [25, 0])
+    screen.add_button("o", True, [20, 20], [ 3, 0])
+    while 1:
+        if screen.get_state_of_button("x"):
+            exit()
+
+        if screen.get_state_of_button("o"):
+            return
+
+        time.sleep(.1)
+
+def menu_screnn(conn, screen):
     screen_size = conn.ui.stock_canvas.rect_transform.size
     screen.creat_screen([150, 190], (260-(screen_size[0]/2), (screen_size[1]/2)-200))
+
+    screen.add_button("x", True, [20,20], [60, 82])
+    screen.add_button("_", True, [20,20], [38, 82])
 
     button_size = [140, 40]
     amount_of_buttons = 0
@@ -35,14 +46,31 @@ def main():
     amount_of_buttons += 1
 
     while 1:
-        if screen.get_state_of_button("Orbit launch"):
-            try:
+        try:
+            if screen.get_state_of_button("Orbit launch"):
                 orbit_launch.launch(conn, screen)
-            except:
-                pass
+                return
+
+            if screen.get_state_of_button("x"):
+                exit()
+
+            if screen.get_state_of_button("_"):
+                minimized_screen(screen)
+                return
+
+            time.sleep(.1)
+        except Exception as Argument:
+            print(f"Error: {Argument}")
             return
 
-        time.sleep(.1)
+def main():
+    conn = None
+    while conn == None:
+        conn = connect_to_server()
+        time.sleep(1)
 
-while 1:
-    main()
+    screen = Screen(conn)
+    while(1):
+        menu_screnn(conn, screen)
+
+main()
