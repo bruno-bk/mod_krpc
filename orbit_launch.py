@@ -15,7 +15,7 @@ def add_fuel_telemetry(conn, screen, vessel, stages_amount, stage_resources, sta
         elif(stage_fuel_liquid[i]() != 0):
             screen.add_telemetry(f"l fuel stage {i + CONTROL_STAGES}", "", stage_fuel_liquid[i])
 
-def launch(conn, screen):
+def launch(conn, screen, vessel):
     turn_start_altitude = 250
     turn_end_altitude = 70000
     target_apoapsis = 100000
@@ -26,14 +26,6 @@ def launch(conn, screen):
     screen.creat_screen([500, 300], (260-(screen_size[0]/2), (screen_size[1]/2)-200))
     screen.add_button("Launch", True, [150, 40], [165, -120])
     screen.add_status_of_launch("status")
-
-    while 1:
-        try:
-            vessel = conn.space_center.active_vessel
-            break
-        except:
-            screen.update_text_value("status", "waiting launch...")
-            time.sleep(1)
 
     srf_frame = vessel.orbit.body.reference_frame
 
