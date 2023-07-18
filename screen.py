@@ -12,6 +12,12 @@ class Screen:
         self.lines_of_telemetry = 0
         self.lines_of_input = 0
 
+    def visible_screnn(self):
+        try:
+            return self.panel.visible
+        except:
+            return False
+
     def creat_screen(self, size, position):
         if self.panel != None:
             self.clear_screen()
