@@ -9,17 +9,29 @@ class Screen:
         self.texts = {}
         self.buttons = {}
         self.inputs = {}
-        self.creat_screen()
         self.lines_of_telemetry = 0
         self.lines_of_input = 0
 
-    def creat_screen(self):
-        canvas = self.connection.ui.stock_canvas
-        screen_size = canvas.rect_transform.size
+    def visible_screnn(self):
+        try:
+            return self.panel.visible
+        except:
+            return False
 
+    def creat_screen(self, size, position):
+        if self.panel != None:
+            self.clear_screen()
+
+        canvas = self.connection.ui.stock_canvas
         self.panel = canvas.add_panel()
-        self.panel.rect_transform.size = self.size_of_screen
-        self.panel.rect_transform.position = (260-(screen_size[0]/2), (screen_size[1]/2)-200)
+        self.panel.rect_transform.size = size
+        self.panel.rect_transform.position = position
+    
+    def clear_screen(self):
+        self.connection.ui.clear()
+        self.texts.clear()
+        self.buttons.clear()
+        self.inputs.clear()
 
     def add_button(self, name, creat_stream, size, position):
         button_launch = self.panel.add_button(name)
@@ -35,7 +47,7 @@ class Screen:
         if(len(self.buttons[name]) == 2):
             result = self.buttons[name][1]()
             if result == True:
-                self.buttons[name][1] = False
+                self.buttons[name][0].clicked = False
         else:
             # TODO - log warn
             print("stream não criada")
